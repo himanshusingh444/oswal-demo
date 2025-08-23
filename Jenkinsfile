@@ -44,8 +44,8 @@ pipeline {
         stage('Push to GHCR') {
             steps {
                 sh 'echo $GITHUB_TOKEN_PSW | docker login ghcr.io -u himanshusingh444 --password-stdin'
-                sh 'docker push ghcr.io/<your-username>/go-app:latest'
-                sh 'docker push ghcr.io/<your-username>/dotnet-app:latest'
+                sh 'docker push ghcr.io/himanshusingh444/go-app:latest'
+                sh 'docker push ghcr.io/himanshusingh444/dotnet-app:latest'
             }
         }
         stage('Create Release') {
