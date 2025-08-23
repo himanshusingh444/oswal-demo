@@ -26,7 +26,7 @@ pipeline {
                 stage('Go') {
                     steps {
                         dir('go-app') {
-                            sh 'docker build -t ghcr.io//go-app:latest .'
+                            sh 'docker build -t ghcr.io/himanshusingh444/go-app:latest .'
                             sh 'trivy image --exit-code 1 --no-progress --severity HIGH,CRITICAL ghcr.io/himanshusingh444/go-app:latest'
                         }
                     }
@@ -49,7 +49,7 @@ pipeline {
             }
         }
         stage('Create Release') {
-            steps { sh 'gh release create v1.0 --notes "Initial release" --target main' }  // Install gh CLI if needed
-        }
+          steps { sh 'gh release create v1.0 --notes "Initial release" --target main' }
+        }       
     }
 }
