@@ -1,5 +1,6 @@
 package main
 import (
+    "fmt"              // Add this line
     "net/http"
     "net/http/httptest"
     "testing"
