@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.DependencyInjection; // Add this
 
 public class Program
 {
@@ -18,6 +19,11 @@ public class Program
 
 public class Startup
 {
+    public void ConfigureServices(IServiceCollection services)
+    {
+        services.AddRouting(); // Add routing services
+    }
+
     public void Configure(IApplicationBuilder app)
     {
         app.UseRouting();
