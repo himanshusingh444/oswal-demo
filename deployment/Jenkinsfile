@@ -7,6 +7,12 @@ pipeline {
             description: 'Select the environment to deploy to',
             defaultValue: 'dev'
         )
+        choice(
+            name: 'APP_TO_DEPLOY',
+            choices: ['both', 'go-app', 'dotnet-app'],
+            description: 'Select the application(s) to deploy',
+            defaultValue: 'both'
+        )
     }
     environment {
         HELM_CHARTS_DIR = '../helm'
@@ -19,6 +25,9 @@ pipeline {
             }
         }
         stage('Deploy Go App') {
+            when {
+                expression { params.APP_TO_DEPLOY == 'both' || params.APP_TO_DEPLOY == 'go-app' }
+            }
             steps {
                 script {
                     try {
@@ -29,14 +38,17 @@ pipeline {
                         """
                         echo "Go app deployed to ${params.ENVIRONMENT}"
                     } catch (Exception e) {
-                        echo "Deployment failed: ${e.message}"
+                        echo "Deployment failed for Go app: ${e.message}"
                         sh "helm rollback go-app ${params.ENVIRONMENT} --namespace ${params.ENVIRONMENT}"
-                        error "Rollback triggered due to failure"
+                        error "Rollback triggered for Go app"
                     }
                 }
             }
         }
         stage('Deploy .NET App') {
+            when {
+                expression { params.APP_TO_DEPLOY == 'both' || params.APP_TO_DEPLOY == 'dotnet-app' }
+            }
             steps {
                 script {
                     try {
@@ -47,26 +59,39 @@ pipeline {
                         """
                         echo ".NET app deployed to ${params.ENVIRONMENT}"
                     } catch (Exception e) {
-                        echo "Deployment failed: ${e.message}"
+                        echo "Deployment failed for .NET app: ${e.message}"
                         sh "helm rollback dotnet-app ${params.ENVIRONMENT} --namespace ${params.ENVIRONMENT}"
-                        error "Rollback triggered due to failure"
+                        error "Rollback triggered for .NET app"
                     }
                 }
             }
         }
         stage('Verify Deployment') {
+            when {
+                anyOf {
+                    expression { params.APP_TO_DEPLOY == 'both' }
+                    expression { params.APP_TO_DEPLOY == 'go-app' }
+                    expression { params.APP_TO_DEPLOY == 'dotnet-app' }
+                }
+            }
             steps {
-                sh "sudo -u jenkins kubectl rollout status deployment/go-app -n ${params.ENVIRONMENT} --timeout=120s"
-                sh "sudo -u jenkins kubectl rollout status deployment/dotnet-app -n ${params.ENVIRONMENT} --timeout=120s"
+                script {
+                    if (params.APP_TO_DEPLOY == 'both' || params.APP_TO_DEPLOY == 'go-app') {
+                        sh "helm rollout status deployment/go-app -n ${params.ENVIRONMENT} --timeout 120s"
+                    }
+                    if (params.APP_TO_DEPLOY == 'both' || params.APP_TO_DEPLOY == 'dotnet-app') {
+                        sh "helm rollout status deployment/dotnet-app -n ${params.ENVIRONMENT} --timeout 120s"
+                    }
+                }
             }
         }
     }
     post {
         failure {
-            echo "Deployment to ${params.ENVIRONMENT} failed. Check logs for details."
+            echo "Deployment to ${params.ENVIRONMENT} failed for ${params.APP_TO_DEPLOY}. Check logs for details."
         }
         success {
-            echo "Deployment to ${params.ENVIRONMENT} completed successfully."
+            echo "Deployment to ${params.ENVIRONMENT} completed successfully for ${params.APP_TO_DEPLOY}."
         }
     }
 }
