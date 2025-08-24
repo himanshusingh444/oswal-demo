@@ -24,5 +24,4 @@ probes:
   readiness:
     path: /health
     initialDelaySeconds: 5
-    periodSeconds: 5
-~                               
+    periodSeconds: 5                            
