@@ -1,8 +1,7 @@
 pipeline {
     agent any
     environment {
-        GITHUB_USERNAME = credentials('oswal-demo').username
-        GITHUB_TOKEN_PSW = credentials('oswal-demo').password
+        GITHUB_TOKEN = credentials('oswal-demo')
     }
     stages {
         stage('Checkout') {
@@ -48,7 +47,7 @@ pipeline {
         }
         stage('Push to GHCR') {
             steps {
-                sh 'echo $GITHUB_TOKEN_PSW | docker login ghcr.io -u $GITHUB_USERNAME --password-stdin'
+                sh 'echo $GITHUB_TOKEN_PSW | docker login ghcr.io -u himanshusingh444 --password-stdin'
                 sh 'docker push ghcr.io/himanshusingh444/go-app:latest'
                 sh 'docker push ghcr.io/himanshusingh444/dotnet-app:latest'
             }
@@ -67,7 +66,7 @@ pipeline {
     }
     post {
         success {
-            echo "CI completed successfully, triggering deployment to for both apps."
+            echo "CI completed successfully, triggering deployment to dev for both apps."
         }
         failure {
             echo "CI failed. Deployment not triggered."
