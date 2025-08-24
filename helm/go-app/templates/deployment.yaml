@@ -14,7 +14,8 @@ spec:
       labels:
         app: go-app
     spec:
-      imagePullSecrets: {{ .Values.image.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.image.imagePullSecrets | indent 6 }}
       containers:
       - name: go-app
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
