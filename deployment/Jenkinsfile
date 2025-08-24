@@ -1,0 +1,72 @@
+pipeline {
+    agent any
+    parameters {
+        choice(
+            name: 'ENVIRONMENT',
+            choices: ['dev', 'qa', 'staging'],
+            description: 'Select the environment to deploy to',
+            defaultValue: 'dev'
+        )
+    }
+    environment {
+        HELM_CHARTS_DIR = '../helm'
+    }
+    stages {
+        stage('Prepare Environment') {
+            steps {
+                sh "kubectl config set-context --current --namespace=${params.ENVIRONMENT}"
+                sh "kubectl create namespace ${params.ENVIRONMENT} --dry-run=client -o yaml | kubectl apply -f - || true"
+            }
+        }
+        stage('Deploy Go App') {
+            steps {
+                script {
+                    try {
+                        sh """
+                        helm upgrade --install go-app ${HELM_CHARTS_DIR}/go-app \
+                        --values ${HELM_CHARTS_DIR}/go-app/values-${params.ENVIRONMENT}.yaml \
+                        --namespace ${params.ENVIRONMENT} --create-namespace
+                        """
+                        echo "Go app deployed to ${params.ENVIRONMENT}"
+                    } catch (Exception e) {
+                        echo "Deployment failed: ${e.message}"
+                        sh "helm rollback go-app ${params.ENVIRONMENT} --namespace ${params.ENVIRONMENT}"
+                        error "Rollback triggered due to failure"
+                    }
+                }
+            }
+        }
+        stage('Deploy .NET App') {
+            steps {
+                script {
+                    try {
+                        sh """
+                        helm upgrade --install dotnet-app ${HELM_CHARTS_DIR}/dotnet-app \
+                        --values ${HELM_CHARTS_DIR}/dotnet-app/values-${params.ENVIRONMENT}.yaml \
+                        --namespace ${params.ENVIRONMENT} --create-namespace
+                        """
+                        echo ".NET app deployed to ${params.ENVIRONMENT}"
+                    } catch (Exception e) {
+                        echo "Deployment failed: ${e.message}"
+                        sh "helm rollback dotnet-app ${params.ENVIRONMENT} --namespace ${params.ENVIRONMENT}"
+                        error "Rollback triggered due to failure"
+                    }
+                }
+            }
+        }
+        stage('Verify Deployment') {
+            steps {
+                sh "sudo -u jenkins kubectl rollout status deployment/go-app -n ${params.ENVIRONMENT} --timeout=120s"
+                sh "sudo -u jenkins kubectl rollout status deployment/dotnet-app -n ${params.ENVIRONMENT} --timeout=120s"
+            }
+        }
+    }
+    post {
+        failure {
+            echo "Deployment to ${params.ENVIRONMENT} failed. Check logs for details."
+        }
+        success {
+            echo "Deployment to ${params.ENVIRONMENT} completed successfully."
+        }
+    }
+}

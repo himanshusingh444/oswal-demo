@@ -1,8 +1,13 @@
 pipeline {
     agent any
-    environment { GITHUB_TOKEN = credentials('oswal-demo') }
+    environment {
+        GITHUB_USERNAME = credentials('oswal-demo').username
+        GITHUB_TOKEN_PSW = credentials('oswal-demo').password
+    }
     stages {
-        stage('Checkout') { steps { checkout scm } }
+        stage('Checkout') {
+            steps { checkout scm }
+        }
         stage('Build and Test Go') {
             steps {
                 dir('go-app') {
@@ -43,13 +48,29 @@ pipeline {
         }
         stage('Push to GHCR') {
             steps {
-                sh 'echo $GITHUB_TOKEN_PSW | docker login ghcr.io -u himanshusingh444 --password-stdin'
+                sh 'echo $GITHUB_TOKEN_PSW | docker login ghcr.io -u $GITHUB_USERNAME --password-stdin'
                 sh 'docker push ghcr.io/himanshusingh444/go-app:latest'
                 sh 'docker push ghcr.io/himanshusingh444/dotnet-app:latest'
             }
         }
-        stage('Create Release') {
-          steps { sh 'gh release create v1.0 --notes "Initial release" --target main' }
-        }       
+        stage('Trigger Deployment') {
+            steps {
+                build job: 'deployment-pipeline', parameters: [
+                    string(name: 'ENVIRONMENT', value: 'dev'),
+                    string(name: 'APP_TO_DEPLOY', value: 'both')
+                ]
+            }
+        }
+        // stage('Create Release') {
+        //   steps { sh 'gh release create v1.0 --notes "Initial release" --target main' }
+        // }       
+    }
+    post {
+        success {
+            echo "CI completed successfully, triggering deployment to for both apps."
+        }
+        failure {
+            echo "CI failed. Deployment not triggered."
+        }
     }
 }
