@@ -22,7 +22,8 @@ pipeline {
                         echo "Go app deployed to dev"
                     } catch (Exception e) {
                         echo "Deployment failed for Go app: ${e.message}"
-                        sh "helm rollback go-app dev --namespace dev"
+                        // Only rollback if release exists
+                        sh "helm list -n dev | grep go-app && helm rollback go-app 1 --namespace dev || echo 'No previous revision to rollback'"
                         error "Rollback triggered for Go app"
                     }
                 }
@@ -40,7 +41,8 @@ pipeline {
                         echo ".NET app deployed to dev"
                     } catch (Exception e) {
                         echo "Deployment failed for .NET app: ${e.message}"
-                        sh "helm rollback dotnet-app dev --namespace dev"
+                        // Only rollback if release exists
+                        sh "helm list -n dev | grep dotnet-app && helm rollback dotnet-app 1 --namespace dev || echo 'No previous revision to rollback'"
                         error "Rollback triggered for .NET app"
                     }
                 }
