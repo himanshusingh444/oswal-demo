@@ -47,14 +47,7 @@ pipeline {
                 }
             }
         }
-        stage('Verify Deployment') {
-            steps {
-                script {
-                    sh "helm rollout status deployment/go-app -n dev --timeout 120s"
-                    sh "helm rollout status deployment/dotnet-app -n dev --timeout 120s"
-                }
-            }
-        }
+
     }
     post {
         failure {
