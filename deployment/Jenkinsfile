@@ -1,7 +1,6 @@
 pipeline {
     agent any
     environment {
-        // HELM_CHARTS_DIR = '../helm'
         ENVIRONMENT = 'dev'
     }
     stages {
@@ -16,7 +15,7 @@ pipeline {
                     try {
                         sh """
                         helm upgrade --install go-app helm/go-app \
-                        --values ${HELM_CHARTS_DIR}/go-app/values-dev.yaml \
+                        --values helm/go-app/values-dev.yaml \
                         --namespace dev
                         """
                         echo "Go app deployed to dev"
@@ -35,7 +34,7 @@ pipeline {
                     try {
                         sh """
                         helm upgrade --install dotnet-app helm/dotnet-app \
-                        --values ${HELM_CHARTS_DIR}/dotnet-app/values-dev.yaml \
+                        --values helm/dotnet-app/values-dev.yaml \
                         --namespace dev
                         """
                         echo ".NET app deployed to dev"
