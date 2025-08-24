@@ -14,12 +14,7 @@ spec:
       labels:
         app: go-app
     spec:
-      imagePullSecrets:
-      {{- if .Values.image.imagePullSecrets }}
-        {{- range .Values.image.imagePullSecrets }}
-        - name: {{ . }}
-        {{- end }}
-      {{- end }}
+      imagePullSecrets: {{ .Values.image.imagePullSecrets }}
       containers:
       - name: go-app
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
